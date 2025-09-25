@@ -1,12 +1,10 @@
 #-----------------------------------------------------------------------
 # Sample program using a Microsoft MSSQL database
 #
-# First approach to let PAM manage the password for the database account.
-# It uses A2A when fetching credentials. Teh credentials are returned
-# as an XML structure. From there the hostname, port, database, etc.
-# is fetched when opening a connection to the database.
-#
-# Username/password is no longer in the script.
+# The example here uses a hardcoded username/password when connecting
+# to a MSSQL database and fetching some information.
+# 
+# Anybody with access to this script will know the password. 
 # 
 #-----------------------------------------------------------------------
 
