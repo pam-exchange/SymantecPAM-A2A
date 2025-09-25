@@ -1,0 +1,128 @@
+<project name="sampleClient" default="buildAndPackage" basedir="./">
+
+	<!-- ==================== init ===================================== -->
+	<target name="init">
+
+		<property file="${basedir}/../build.properties"/>
+		<property file="${basedir}/build.properties"/>
+
+		<property name="src" value="${basedir}/src"/>
+		<property name="lib" value="${basedir}/lib"/>
+		<property name="out" value="${basedir}/classes"/>
+		<property name="docs" value="${basedir}/docs"/>
+		<property name="extlib" value="${basedir}/../lib"/>
+
+		<tstamp>
+			<format property="timestamp" pattern="dd MMMM yyyy, HH:mm:ss"/>
+		</tstamp>
+		<property name="plugin.filename" value="${basename}-${version}-${DSTAMP}${TSTAMP}.zip"/>
+
+		<!--
+		<echo>plugin.filename: ${plugin.filename}</echo>
+		-->
+
+	</target>
+
+	<!-- ==================== manifest ===================================== -->
+	<target name="manifest" depends="init">
+		<mkdir dir="${basedir}/META-INF"/>
+		<manifest file="${basedir}/META-INF/MANIFEST.MF">
+			<attribute name="Main-Class" value="MessageEncode"/>
+			<attribute name="Version" value="${version}"/>
+			<attribute name="Class-Path" value="c:/cspm/cloakware/cspmclient/lib/cspmclient.jar c:/cspm/cloakware/cspmclient/lib/cwjcafips.jar ${lib}/jose4j-0.9.6.jar  "/>
+			<attribute name="Compile-timestamp" value="${timestamp}"/> 
+			
+		</manifest>
+	</target>
+
+	<!-- ==================== defineClassPath ===================================== -->
+	<target name="defineClassPath">
+
+		<path id="compile.classpath">
+			<pathelement path="${java.home}/lib/jre"/>
+
+			<fileset dir="${cspm.home}/lib">
+				<include name="cspmclient.jar"/> 
+				<include name="cwjcafips.jar"/> 
+			</fileset>
+
+			<fileset dir="${lib}">
+				<include name="*.jar"/> 
+			</fileset>
+
+		</path>
+	</target>	
+
+	<!-- ==================== defineClassPath ===================================== -->
+	<target name="copyLibs">
+		<mkdir dir="${lib}"/>
+		<copy todir="${lib}" overwrite="true" preservelastmodified="yes" verbose="true">
+			<fileset dir="${extlib}">
+				<include name="jose4j-0.9.6.jar"/>
+				<include name="json-simple-1.1.1.jar"/>
+				<include name="slf4j-api-2.0.12.jar"/>
+				<include name="slf4j-simple-2.0.12.jar"/>
+			</fileset> 
+		</copy>
+	</target>
+
+	<!-- ==================== Compile Target ===================================== -->
+	<!--
+	<target name="compile" description="Compile" depends="init,defineClassPath,manifest">
+	-->
+	<target name="compile" description="Compile" depends="init,defineClassPath,copyLibs">
+
+		<mkdir dir="${out}"/>
+
+		<echo>Compiling src in ${src}</echo>
+		<javac  srcdir="${src}"
+				destdir="${out}"
+				debug="${compile.debug}"
+				deprecation="${compile.deprecation}"
+				optimize="${compile.optimize}"
+				target="${compile.target}"
+				source="${compile.source}"
+				compiler="${compile.compiler}"
+				includeantruntime="false">       
+				<classpath refid="compile.classpath"/>        
+		</javac>
+
+		<!--
+		<echo>Building lib: ${basename}.jar</echo>
+		<jar jarfile="${lib}/${basename}.jar" basedir="${out}"  manifest="${basedir}/META-INF/MANIFEST.MF"/>
+		-->
+
+	</target>
+
+	<!-- ==================== Package Target ===================================== -->
+	<!--
+	<target name="buildAndPackage" description="Complete package" depends="init,defineClassPath,manifest,compile">
+	-->
+	<target name="buildAndPackage" description="Complete package" depends="init,defineClassPath,compile">
+
+		<echo>Building plugin: ${plugin.filename}</echo>
+
+		<zip destfile="${basedir}/${plugin.filename}">
+			<fileset dir="${basedir}" 
+				includes="classes/** lib/** sampleClient.bat" 
+			/>
+		</zip>
+
+		<delete dir="${basedir}/META-INF"/>
+
+		<echo>All Done</echo>
+	</target>
+
+	<!-- ==================== Run Target ===================================== -->
+	<target name="run" depends="buildAndPackage" description="">
+        <java classname="MessageEncode" failonerror="true" fork="yes">
+            <classpath refid="MessageEncode.classpath"/>
+        </java>
+	</target>
+	
+	<!-- ==================== Clean Target ===================================== -->
+	<target name="clean" depends="init" description="">
+		<delete dir="${out}"/>
+		<delete dir="${basedir}/classes"/>
+	</target>	
+</project>

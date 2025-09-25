@@ -1,0 +1,117 @@
+<!--
+This is a master build file that can be used to build all the sub-projects.
+-->
+<project name="master-build" default="info" basedir=".">
+
+    <!-- ==================== Properties ===================================== -->
+    <property name="secureTomcat.dir" value="secureTomcat"/>
+    <property name="sampleClient.dir" value="sampleClient"/>
+    <property name="sampleServer.dir" value="sampleServer"/>
+
+    <!-- ==================== Info Target ===================================== -->
+    <target name="info">
+        <echo>
+            This is the master build file.
+            Use 'ant -p' to see available targets.
+
+            To build a specific project, use for example:
+            ant secureTomcat
+
+            To run a specific target on a project, use for example:
+            ant secureTomcat.compile
+        </echo>
+    </target>
+
+    <!-- ==================== secureTomcat Targets ===================================== -->
+    <target name="secureTomcat" description="Build and package the secureTomcat project">
+        <ant antfile="${secureTomcat.dir}/build.xml" inheritAll="false" target="buildAndPackage"/>
+    </target>
+
+    <target name="secureTomcat.compile" description="Compile the secureTomcat project">
+        <ant antfile="${secureTomcat.dir}/build.xml" inheritAll="false" target="compile"/>
+    </target>
+
+    <target name="secureTomcat.clean" description="Clean the secureTomcat project">
+        <ant antfile="${secureTomcat.dir}/build.xml" inheritAll="false" target="clean"/>
+    </target>
+
+    <target name="secureTomcat.buildAndPackage" description="Build and package the secureTomcat project">
+		<echo>
+
+		---------------------------------------------------------------------------
+		secureTomcat 
+		---------------------------------------------------------------------------
+		
+		</echo>
+        <ant antfile="${secureTomcat.dir}/build.xml" inheritAll="false" target="buildAndPackage"/>
+    </target>
+
+    <target name="secureTomcat.deploy" description="Deploy the secureTomcat project">
+        <ant antfile="${secureTomcat.dir}/build.xml" inheritAll="false" target="deploy"/>
+    </target>
+
+    <!-- ==================== sampleServer Targets ===================================== -->
+    <target name="sampleServer" description="Build and package the sampleServer project">
+        <ant antfile="${sampleServer.dir}/build.xml" inheritAll="false" target="buildAndPackage"/>
+    </target>
+
+    <target name="sampleServer.compile" description="Compile the sampleServer project">
+        <ant antfile="${sampleServer.dir}/build.xml" inheritAll="false" target="compile"/>
+    </target>
+
+    <target name="sampleServer.clean" description="Clean the sampleServer project">
+        <ant antfile="${sampleServer.dir}/build.xml" inheritAll="false" target="clean"/>
+    </target>
+
+    <target name="sampleServer.buildAndPackage" description="Build and package for the sampleServer project">
+		<echo>
+
+		---------------------------------------------------------------------------
+		sampleServer
+		---------------------------------------------------------------------------
+		
+		</echo>
+        <ant antfile="${sampleServer.dir}/build.xml" inheritAll="false" target="buildAndPackage"/>
+    </target>
+
+    <target name="sampleServer.deploy" description="Deploy the sampleServer project">
+        <ant antfile="${sampleServer.dir}/build.xml" inheritAll="false" target="deploy"/>
+    </target>
+
+    <!-- ==================== sampleClient Targets ===================================== -->
+    <target name="sampleClient" description="Build and package the sampleClient project">
+        <ant antfile="${sampleClient.dir}/build.xml" inheritAll="false" target="buildAndPackage"/>
+    </target>
+
+    <target name="sampleClient.compile" description="Compile the sampleClient project">
+        <ant antfile="${sampleClient.dir}/build.xml" inheritAll="false" target="compile"/>
+    </target>
+
+    <target name="sampleClient.clean" description="Clean the sampleClient project">
+        <ant antfile="${sampleClient.dir}/build.xml" inheritAll="false" target="clean"/>
+    </target>
+
+    <target name="sampleClient.buildAndPackage" description="Build and package the sampleClient project">
+		<echo>
+
+		---------------------------------------------------------------------------
+		sampleClient
+		---------------------------------------------------------------------------
+		
+		</echo>
+        <ant antfile="${sampleClient.dir}/build.xml" inheritAll="false" target="buildAndPackage"/>
+    </target>
+
+    <target name="sampleClient.run" description="Run the sampleClient project">
+        <ant antfile="${sampleClient.dir}/build.xml" inheritAll="false" target="run"/>
+    </target>
+
+    <!-- ==================== Global Targets ===================================== -->
+
+    <target name="build" description="Build all projects" depends="secureTomcat.buildAndPackage, sampleServer.buildAndPackage, sampleClient.buildAndPackage"/>
+
+    <target name="clean" description="Clean all projects" depends="secureTomcat.clean, sampleServer.clean, sampleClient.clean"/>
+
+    <target name="deploy" description="Deploy all projects" depends="secureTomcat.deploy, sampleServer.deploy"/>
+
+</project>

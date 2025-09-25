@@ -1,0 +1,140 @@
+<project name="sampleServer" default="buildAndPackage" basedir=".">
+
+	<!-- ==================== init ===================================== -->
+	<target name="init">
+
+		<!--
+		<property name="build" value="${basedir}/build"/>
+		<property file="${build}/build.properties"/>
+		-->
+		<property file="${basedir}/../build.properties"/>
+		<property file="${basedir}/build.properties"/>
+
+		<property name="src" value="${basedir}/src"/>
+		<property name="lib" value="${basedir}/lib"/>
+		<property name="out" value="${basedir}/WEB-INF/classes"/>
+		<property name="docs" value="${basedir}/docs"/>
+
+		<property name="secureTomcat" value="${basedir}/../secureTomcat"/>
+
+		<tstamp>
+			<format property="timestamp" pattern="dd MMMM yyyy, HH:mm:ss"/>
+		</tstamp>
+		<property name="plugin.filename" value="${basename}-${version}-${DSTAMP}${TSTAMP}.zip"/>
+
+		<!--
+		<echo>plugin.filename: ${plugin.filename}</echo>
+		-->
+
+	</target>
+
+	<!-- ==================== manifest ===================================== -->
+	<target name="manifest" depends="init">
+		<mkdir dir="${basedir}/META-INF"/>
+		<manifest file="${basedir}/META-INF/MANIFEST.MF">
+			<attribute name="Plugin-name" value="${basename}"/>
+			<attribute name="Version" value="${version}"/> 
+			<attribute name="Compile-timestamp" value="${timestamp}"/> 
+		</manifest>
+	</target>
+
+	<!-- ==================== defineClassPath ===================================== -->
+	<target name="defineClassPath">
+
+		<path id="compile.classpath">
+			<pathelement path="${java.home}/lib/jre"/>
+
+			<fileset dir="${cspm.home}/lib">
+				<include name="cspmclient.jar"/> 
+				<include name="cwjcafips.jar"/> 
+			</fileset>
+
+			<fileset dir="${secureTomcat}">
+				<include name="secureTomcat.jar"/>	
+			</fileset>
+
+			<fileset dir="${catalina.home}/lib">
+				<!-- <include name="tomcat-coyote.jar"/>		Tomcat 7 -->
+				<include name="tomcat-util.jar"/> 		<!-- Tomcat 8+9 -->
+				<include name="servlet-api.jar"/>
+				<include name="*.jar"/>
+			</fileset>
+
+			<fileset dir="${lib}">
+				<include name="*.jar"/> 
+			</fileset>
+
+		</path>
+	</target>	
+
+	<!-- ==================== Compile Target ===================================== -->
+	<target name="compile" description="Compile" depends="init,defineClassPath,manifest">
+
+		<mkdir dir="${out}"/>
+		<mkdir dir="${lib}"/>
+
+		<echo>Compiling src in ${src}</echo>
+		<javac  srcdir="${src}"
+				destdir="${out}"
+				debug="${compile.debug}"
+				deprecation="${compile.deprecation}"
+				optimize="${compile.optimize}"
+				target="${compile.target}"
+				source="${compile.source}"
+				compiler="${compile.compiler}"
+				includeantruntime="false">       
+				<classpath refid="compile.classpath"/>        
+		</javac>
+
+	</target>
+
+	<!-- ==================== Package Target ===================================== -->
+	<target name="buildAndPackage" description="Complete package" depends="init,defineClassPath,manifest,compile">
+
+		<echo>Building plugin: ${plugin.filename}</echo>
+		
+		<copy todir="${basedir}/WEB-INF/lib" overwrite="true" preservelastmodified="yes" verbose="true">
+			<fileset dir="${lib}">
+				<include name="**"/>
+			</fileset>
+		</copy> 
+		
+		<jar destfile="${basedir}/${plugin.filename}">
+			<fileset dir="${basedir}">
+				<include name="lib/**"/>
+				<include name="src/**"/>
+				<include name="docs/**"/>
+				<include name="build.xml"/>
+				<include name="build.properties"/>
+			</fileset>
+		</jar>
+
+		<echo>Building plugin: ${applname}.war</echo>
+		<jar destfile="${basedir}/${applname}.war" manifest="${basedir}/META-INF/MANIFEST.MF">
+			<fileset dir="${basedir}">
+				<include name="WEB-INF/**"/>
+			</fileset>
+		</jar>
+
+		<delete dir="${basedir}/META-INF"/>
+		<delete dir="${basedir}/WEB-INF"/>
+
+		<echo>All Done</echo>
+	</target>
+
+	<!-- ==================== Deploy Target ===================================== -->
+	<target name="deploy" depends="buildAndPackage" description="">
+	
+		<copy todir="${catalina.home}/webapps" file="${basedir}/${applname}.war" overwrite="true" preservelastmodified="yes" verbose="true" />
+
+	</target>
+	
+	<!-- ==================== Clean Target ===================================== -->
+	<target name="clean" depends="init" description="">
+		<delete dir="${basedir}/${basename}.war"/>
+		<delete dir="${out}"/>
+		<delete dir="${basedir}/META-INF"/>
+		<delete dir="${basedir}/WEB-INF"/>
+	</target>	
+	
+</project>
