@@ -1,43 +1,3 @@
-#-----------------------------------------------------------------------
-# Sample program using a Microsoft MSSQL database
-#
-# Optimal approach is to setup A2A account using the A2A client caching 
-# mechanism. With this the A2A client will only query PAM when needed.
-# Alas, most of the time the credentials are found in A2A cache
-# and they are returned very quickly (~ 200mS) instead of a roundtrip to 
-# PAM (~3 seconds}. Drawback is that the application must take into 
-# account that the credentials returned from cache may be obsolete.
-#
-# The example here is handling a scenario where the password retrieved
-# from A2A client is invalid and make a second query but forcing
-# the request to PAM instead of using cache.
-#
-#-----------------------------------------------------------------------
-
-#*********************************************************************
-# MIT License
-#
-# Copyright (c) 2024-2025 PAM-Exchange
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#**********************************************************************
-
 import os
 import platform
 import subprocess
@@ -49,14 +9,14 @@ def get_credentials(alias, bypass_cache):
     Fetches credentials from PAM using the A2A client.
     """
     cspm_client_home = os.environ.get("CSPM_CLIENT_HOME", "c:/cspm/cloakware")
-
+    
     if platform.architecture()[0] == "32bit":
         client_path = os.path.join(cspm_client_home, "cspmclient", "bin", "cspmclient")
     else:
         client_path = os.path.join(cspm_client_home, "cspmclient", "bin64", "cspmclient64")
 
     cmd = [client_path, alias, str(bypass_cache).lower(), "-x"]
-
+    
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         return result.stdout
@@ -95,7 +55,7 @@ def mssql_connect(alias):
     Establishes a database connection to an MSSQL database, with retry logic.
     """
     dbh = None
-
+    
     # Fetch from cache first
     creds = mssql_get_credentials(alias, "false")
     rc, db_hostname, db_port, db_database, db_userid, db_passwd = creds + (None,) * (6 - len(creds))
@@ -105,6 +65,52 @@ def mssql_connect(alias):
         dsn = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={db_hostname}"
         if db_database:
             dsn += f";DATABASE={db_database}"
-
+        
         try:
-            dbh = pyo
+            dbh = pyodbc.connect(dsn, user=db_userid, password=db_passwd, autocommit=True)
+        except pyodbc.Error:
+            # Connection failed, try fetching directly from server
+            print("mssqlConnect: Connection with cached credentials failed. Fetching from server.")
+            creds2 = mssql_get_credentials(alias, "true")
+            rc2, db_hostname2, _, _, _, db_passwd2 = creds2 + (None,) * (6 - len(creds2))
+            print(f"mssqlConnect: bypassCache=true - alias={alias}, hostname={db_hostname2}, userid={db_userid}, passwd2={db_passwd2}")
+
+            if rc2 == "400":
+                if db_passwd != db_passwd2:
+                    try:
+                        dbh = pyodbc.connect(dsn, user=db_userid, password=db_passwd2, autocommit=True)
+                    except pyodbc.Error as ex:
+                         print(f"mssqlConnect: Database connection not available: {ex}")
+                else:
+                    print("mssqlConnect: Other error, password in cache and PAM are identical")
+    
+    if rc != "400":
+        print(f"mssqlConnect: Could not retrieve the password for alias={alias}, error code= {rc}")
+    elif not dbh:
+        print("mssqlConnect: Database connection not available.")
+        
+    return dbh
+
+def main():
+    alias = "mssql-hr"
+    dbh = mssql_connect(alias)
+
+    if dbh:
+        try:
+            with dbh.cursor() as cursor:
+                sql = "SELECT TOP 10 employee_id, first_name, last_name, phone_number, email FROM dbo.employees"
+                cursor.execute(sql)
+                
+                for row in cursor.fetchall():
+                    emp_id, first_name, last_name, phone, email = row
+                    print(f"{emp_id or '<id>'}, {first_name or '<first_name>'}, {last_name or '<last_name>'}, {phone or '<phone_number>'}, {email or '<email>'}")
+        except pyodbc.Error as e:
+            print(f"mssqlQuery: Error executing query: {e}")
+        finally:
+            dbh.close()
+    else:
+        print("No connection to database.")
+
+if __name__ == "__main__":
+    main()
+    print("\n--- end of script ---")
