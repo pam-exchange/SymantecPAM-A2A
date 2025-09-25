@@ -45,14 +45,14 @@ def get_credentials(alias, bypass_cache):
     Fetches credentials from PAM using the A2A client.
     """
     cspm_client_home = os.environ.get("CSPM_CLIENT_HOME", "c:/cspm/cloakware")
-
+    
     if platform.architecture()[0] == "32bit":
         client_path = os.path.join(cspm_client_home, "cspmclient", "bin", "cspmclient")
     else:
         client_path = os.path.join(cspm_client_home, "cspmclient", "bin64", "cspmclient64")
 
     cmd = [client_path, alias, bypass_cache, "-x"]
-
+    
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         return result.stdout
@@ -69,11 +69,51 @@ def main():
 
     try:
         root = ET.fromstring(answer)
-
+        
         error_code = root.findtext("errorcode")
         if error_code != "400":
             print(f"Return code = {error_code}")
             return
 
         db_hostname = root.findtext("credential/TargetServer/hostName")
-        db_port = root.findtext("credential/Ta
+        db_port = root.findtext("credential/TargetApplication/Attribute.port")
+        db_database = root.findtext("credential/TargetApplication/Attribute.instance")
+        db_userid = root.findtext("credential/TargetAccount/userName")
+        db_passwd = root.findtext("credential/TargetAccount/password")
+
+        print(f"alias={alias}, hostname={db_hostname}, port={db_port}, userid={db_userid}, passwd={db_passwd}")
+
+        dsn = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={db_hostname}"
+        if db_database:
+            dsn += f";DATABASE={db_database}"
+
+        print(f"dsn= {dsn}")
+
+        try:
+            with pyodbc.connect(dsn, user=db_userid, password=db_passwd) as dbh:
+                cursor = dbh.cursor()
+                sql = "SELECT TOP 10 employee_id, first_name, last_name, phone_number, email FROM dbo.employees"
+                cursor.execute(sql)
+
+                for row in cursor.fetchall():
+                    employee_id, first_name, last_name, phone_number, email = row
+                    
+                    employee_id = employee_id if employee_id is not None else "<id>"
+                    first_name = first_name if first_name is not None else "<first_name>"
+                    last_name = last_name if last_name is not None else "<last_name>"
+                    phone_number = phone_number if phone_number is not None else "<phone_number>"
+                    email = email if email is not None else "<email>"
+
+                    print(f"{employee_id}, {first_name}, {last_name}, {phone_number}, {email}")
+
+        except pyodbc.Error as ex:
+            sqlstate = ex.args[0]
+            print(f"Database connection not made: {sqlstate}")
+
+    except ET.ParseError as e:
+        print(f"Failed to parse XML: {e}")
+
+if __name__ == "__main__":
+    main()
+    print("\n--- end of script ---")
+    
