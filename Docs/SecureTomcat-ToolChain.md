@@ -4,7 +4,7 @@ The following tools are used when building the SecureTomcat libraries and applic
 
 - OpenJDK Version 25 (build 25+36-3489)
 - Apache Ant 1.10.15
-- Apache Tomcat 10.1.34
+- Apache Tomcat 10.1.44
 - Symantec PAM 4.2.3
 - Symantec PAM A2A client 4.12.3.134 (from PAM 4.2.3)
 
