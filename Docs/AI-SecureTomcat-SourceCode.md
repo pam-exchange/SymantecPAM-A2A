@@ -1,5 +1,5 @@
-# Source code␤
-The project contains three sub-projects — **SampleClient**, **SampleServer**, and **SecureTomcat** — plus helper files for generating a keystore and a file list.␤
+# Source code
+The project contains three sub-projects — **SampleClient**, **SampleServer**, and **SecureTomcat** — plus helper files for generating a keystore and a file list.
 
 ```
 Tomcat-WebServer
@@ -47,8 +47,8 @@ Tomcat-WebServer
 ```
 
 
-# SecureTomcat␤
-This module contains the core security logic and is compiled into `secureTomcat.jar`. It includes three main classes:␤
+# SecureTomcat
+This module contains the core security logic and is compiled into `secureTomcat.jar`. It includes three main classes:
 
 - **PAM.java**  
   Provides the bootstrap for security. It contains:  
@@ -71,10 +71,10 @@ This module contains the core security logic and is compiled into `secureTomcat.
 - **PAMCredentialHandler.java**  
   Handles retrieval of credentials for Tomcat’s management console login. Its integrity is checked indirectly through the PAM class.
 
-# SampleServer␤
+# SampleServer
 `EchoApp.java` is a minimal example that retrieves the symmetric key from PAM, decrypts the received JWT message, and returns the plaintext. It uses the `a2a.getCredential` method exposed by the PAM class.
 
-# SampleClient␤
+# SampleClient
 A simple command-line client that:  
 - fetches an encryption key from PAM,  
 - encrypts the input message,  
@@ -82,4 +82,4 @@ A simple command-line client that:
 - sends it to `echoApp` over HTTPS,  
 - prints the decrypted response.  
 
-It serves purely as a demonstration of fetching a key from PAM and encrypting a message.␤
+It serves purely as a demonstration of fetching a key from PAM and encrypting a message.
